@@ -19,8 +19,13 @@
                   {{ $project->type->name }}
                 </strong>
               </p>
-                  
               @endif
+
+              <ul class="d-flex gap-2 ps-0">
+                @foreach ($project->technologies as $technology)
+                  <li class="badge rounded-pill text-bg-primary">{{ $technology->name }}</li>
+                @endforeach 
+              </ul>
               <p class="card-text">{{ $project->description }}</p>
               <p>Creato il {{ $project->creation_date }}</p>
               <div class="links d-flex gap-2">

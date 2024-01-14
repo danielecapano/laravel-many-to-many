@@ -4,6 +4,7 @@ namespace App\Http\Controllers\admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Project;
+use App\Models\Technology;
 use App\Models\Type;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -26,9 +27,9 @@ class ProjectController extends Controller
      */
     public function create()
     {
-
         $types = Type::orderBy('name', 'ASC')->get();
-        return view('admin.projects.create', compact('types'));
+        $technologies = Technology::orderBy('name', 'ASC')->get();
+        return view('admin.projects.create', compact('types', 'technologies'));
     }
 
     /**
@@ -40,7 +41,8 @@ class ProjectController extends Controller
             'title' => 'required|max:100|string|unique:projects',
             'description' => 'nullable|min:5|string',
             'preview' => 'required|max:300|string',
-            'type_id' => 'nullable|exists:types,id'
+            'type_id' => 'nullable|exists:types,id',
+            // 'technologies' => 'exists:technologies, id'
         ]);
 
         $data = $request->all();
@@ -48,6 +50,10 @@ class ProjectController extends Controller
         $data['slug'] = Str::slug($data['title'], '-');
 
         $project = Project::create($data);
+
+        if ($request->has('technologies')) {
+            $project->technologies()->attach($data['technologies']);
+        }
 
         return redirect()->route('admin.projects.show', $project);
     }
@@ -65,9 +71,9 @@ class ProjectController extends Controller
      */
     public function edit(Project $project)
     {
-
         $types = Type::orderBy('name', 'ASC')->get();
-        return view('admin.projects.edit', compact('project', 'types'));
+        $technologies = Technology::orderBy('name', 'ASC')->get();
+        return view('admin.projects.edit', compact('project', 'types', 'technologies'));
     }
 
     /**
@@ -78,7 +84,9 @@ class ProjectController extends Controller
         $request->validate([
             'title' => ['required', 'max:100', 'string', Rule::unique('projects')->ignore($project->id)],
             'description' => 'nullable|min:5|string',
-            'preview' => 'required|max:300|string'
+            'preview' => 'required|max:300|string',
+            'type_id' => 'nullable|exists:types,id',
+            // 'technologies' => 'exists:technologies, id'
         ]);
 
         $data = $request->all();
@@ -86,6 +94,13 @@ class ProjectController extends Controller
         $data['slug'] = Str::slug($data['title'], '-');
 
         $project->update($data);
+
+        if ($request->has('technologies')) {
+            $project->technologies()->sync($data['technologies']);
+        } else {
+            // $post->tags()->sync([]);
+            $project->technologies()->detach();
+        }
 
         return redirect()->route('admin.projects.show', $project);
     }
